@@ -197,6 +197,9 @@ armpmu_event_update(struct perf_event *event,
 	struct arm_pmu *armpmu = to_arm_pmu(event->pmu);
 	u64 delta, prev_raw_count, new_raw_count;
 
+	if (event->state <= PERF_EVENT_STATE_OFF)
+		return 0;
+
 again:
 	prev_raw_count = local64_read(&hwc->prev_count);
 	new_raw_count = armpmu->read_counter(idx);
@@ -893,6 +896,8 @@ static int __cpuinit pmu_cpu_notify(struct notifier_block *b,
 						 hcpu, 1);
 		break;
 	case CPU_STARTING:
+		if (cpu_pmu && cpu_pmu->reset)
+			cpu_pmu->reset(NULL);
 		if (cpu_pmu && cpu_pmu->restore_pm_registers)
 			smp_call_function_single(cpu,
 						 cpu_pmu->restore_pm_registers,
@@ -927,9 +932,8 @@ static int __cpuinit pmu_cpu_notify(struct notifier_block *b,
 				enable_irq_callback(&irq);
 			}
 
-			if (cpu_pmu && cpu_pmu->reset) {
+			if (cpu_pmu) {
 				__get_cpu_var(from_idle) = 1;
-				cpu_pmu->reset(NULL);
 				pmu = &cpu_pmu->pmu;
 				pmu->pmu_enable(pmu);
 				return NOTIFY_OK;

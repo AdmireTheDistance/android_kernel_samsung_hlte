@@ -146,10 +146,12 @@ int mdss_mdp_overlay_req_check(struct msm_fb_data_type *mfd,
 	    req->src_rect.w < min_src_size || req->src_rect.h < min_src_size ||
 	    CHECK_BOUNDS(req->src_rect.x, req->src_rect.w, req->src.width) ||
 	    CHECK_BOUNDS(req->src_rect.y, req->src_rect.h, req->src.height)) {
+#if 0
 		pr_err("invalid source image img wh=%dx%d rect=%d,%d,%d,%d\n",
 		       req->src.width, req->src.height,
 		       req->src_rect.x, req->src_rect.y,
 		       req->src_rect.w, req->src_rect.h);
+#endif
 		return -EOVERFLOW;
 	}
 
@@ -3154,7 +3156,8 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 	kobject_uevent(&dev->kobj, KOBJ_ADD);
 	pr_debug("vsync kobject_uevent(KOBJ_ADD)\n");
 
-	mdp5_data->cpu_pm_hdl = add_event_timer(NULL, (void *)mdp5_data);
+	mdp5_data->cpu_pm_hdl = add_event_timer(mdp5_data->mdata->irq, NULL,
+							(void *)mdp5_data);
 	if (!mdp5_data->cpu_pm_hdl)
 		pr_warn("%s: unable to add event timer\n", __func__);
 
